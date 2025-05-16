@@ -93,15 +93,20 @@ function generateLeadApproachSuggestion(
 // Function to clean raw X data
 export async function cleanXData(rawData: any): Promise<CleanedData> {
   try {
-    const entries =
+    const allEntries =
       rawData.data?.list?.tweets_timeline?.timeline?.instructions?.[0]
         ?.entries || [];
 
-    const individualPosts: CleanedXPost[] = entries
-      .filter((entry: any) => {
-        const tweet = entry?.content?.itemContent?.tweet_results?.result;
-        return tweet && entry.content.entryType !== "TimelineTimelineModule";
-      })
+    // Filter for valid tweet entries first
+    const validTweetEntries = allEntries.filter((entry: any) => {
+      const tweet = entry?.content?.itemContent?.tweet_results?.result;
+      return tweet && entry.content.entryType !== "TimelineTimelineModule";
+    });
+
+    // Take the first 30 valid tweet entries (or fewer if less than 30 are available)
+    const entriesToProcess = validTweetEntries.slice(0, 30);
+
+    const individualPosts: CleanedXPost[] = entriesToProcess
       .map((entry: any) => {
         const tweet = entry.content.itemContent.tweet_results.result;
         const legacy = tweet?.legacy;
@@ -116,7 +121,7 @@ export async function cleanXData(rawData: any): Promise<CleanedData> {
         };
         return cleanedPost;
       })
-      .filter((post: CleanedXPost) => post.content.length > 0);
+      .filter((post: CleanedXPost) => post.content.length > 0); // This filter might be redundant if content length is always > 0 for valid posts
 
     const groupedPosts: Record<string, CleanedXPost[]> = {};
     for (const post of individualPosts) {
