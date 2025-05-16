@@ -85,7 +85,7 @@ export default function CrmLayout({ data }: CrmLayoutProps) {
               <div className="mb-4">
                 <h3 className="font-medium mb-2">Interests</h3>
                 <div className="flex flex-wrap gap-2">
-                  {allUsers.get(selectedUser).interests?.map(interest => (
+                  {allUsers.get(selectedUser).interests?.map((interest: string) => (
                     <span
                       key={interest}
                       className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
