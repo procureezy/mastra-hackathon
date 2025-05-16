@@ -160,43 +160,44 @@ export async function cleanXData(rawData: any): Promise<CleanedData> {
       })
       .map((entry: any) => {
         const tweet = entry.content.itemContent.tweet_results.result;
-        const legacy = tweet.legacy;
-        const user = tweet.core.user_results.result;
-        const entities = legacy.entities;
+        const legacy = tweet?.legacy;
+        const user = tweet?.core?.user_results?.result;
+        const entities = legacy?.entities;
 
         // Count hashtags
-        (entities.hashtags || []).forEach((tag: any) => {
+        (entities?.hashtags || []).forEach((tag: any) => {
           hashtagCounts[tag.text] = (hashtagCounts[tag.text] || 0) + 1;
         });
 
         // Count mentioned users
-        (entities.user_mentions || []).forEach((mention: any) => {
+        (entities?.user_mentions || []).forEach((mention: any) => {
           mentionedUserCounts[mention.screen_name] =
             (mentionedUserCounts[mention.screen_name] || 0) + 1;
         });
 
         // Count languages
-        languageCounts[legacy.lang] = (languageCounts[legacy.lang] || 0) + 1;
+        const lang = legacy?.lang || "unknown";
+        languageCounts[lang] = (languageCounts[lang] || 0) + 1;
 
         const cleanedPost: CleanedXPost = {
-          content: legacy.full_text || "",
+          content: legacy?.full_text || "",
           owner: extractUserProfile(user),
-          publishDate: legacy.created_at || new Date().toISOString(),
+          publishDate: legacy?.created_at || new Date().toISOString(),
           metrics: {
-            likes: legacy.favorite_count || 0,
-            retweets: legacy.retweet_count || 0,
-            replies: legacy.reply_count || 0,
-            quotes: legacy.quote_count || 0,
-            views: tweet.views?.count,
+            likes: legacy?.favorite_count || 0,
+            retweets: legacy?.retweet_count || 0,
+            replies: legacy?.reply_count || 0,
+            quotes: legacy?.quote_count || 0,
+            views: tweet?.views?.count,
           },
           urls: extractUrls(entities),
-          mentionedUsers: (entities.user_mentions || []).map(
+          mentionedUsers: (entities?.user_mentions || []).map(
             (u: any) => u.screen_name
           ),
-          hashtags: (entities.hashtags || []).map((h: any) => h.text),
-          isReply: !!legacy.in_reply_to_status_id_str,
-          isRetweet: !!legacy.retweeted_status_result,
-          language: legacy.lang || "unknown",
+          hashtags: (entities?.hashtags || []).map((h: any) => h.text),
+          isReply: !!legacy?.in_reply_to_status_id_str,
+          isRetweet: !!legacy?.retweeted_status_result,
+          language: lang,
         };
 
         return cleanedPost;

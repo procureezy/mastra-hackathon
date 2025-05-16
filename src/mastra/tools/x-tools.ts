@@ -144,11 +144,7 @@ async function handleAuthentication(page: Page): Promise<void> {
   });
   await page.fill('input[type="password"]', CONFIG.auth.password);
   await page.click('span:has-text("Log in")');
-  await page.waitForLoadState("networkidle");
-  await page.waitForNavigation({
-    waitUntil: "domcontentloaded",
-    timeout: CONFIG.timeouts.input,
-  });
+  await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: CONFIG.timeouts.input });
 }
 
 async function saveRawResponse(
