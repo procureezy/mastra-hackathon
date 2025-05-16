@@ -1,4 +1,4 @@
-import fs from 'fs/promises';
+import fs from "fs/promises";
 
 // Types for cleaned data
 export interface UserProfile {
@@ -69,7 +69,9 @@ export interface NewsletterContent {
   }>;
 }
 
-function extractUrls(entities: any): Array<{ url: string; expandedUrl: string; displayUrl: string }> {
+function extractUrls(
+  entities: any
+): Array<{ url: string; expandedUrl: string; displayUrl: string }> {
   return (entities?.urls || []).map((url: any) => ({
     url: url.url,
     expandedUrl: url.expanded_url,
@@ -80,15 +82,15 @@ function extractUrls(entities: any): Array<{ url: string; expandedUrl: string; d
 function extractUserProfile(user: any): UserProfile {
   const legacy = user?.legacy || {};
   return {
-    screenName: legacy.screen_name || 'unknown',
-    name: legacy.name || 'Unknown',
-    description: legacy.description || '',
+    screenName: legacy.screen_name || "unknown",
+    name: legacy.name || "Unknown",
+    description: legacy.description || "",
     followersCount: legacy.followers_count || 0,
     followingCount: legacy.friends_count || 0,
-    location: legacy.location || '',
+    location: legacy.location || "",
     url: legacy.url,
     isVerified: !!user?.is_blue_verified,
-    profileImageUrl: legacy.profile_image_url_https || '',
+    profileImageUrl: legacy.profile_image_url_https || "",
     createdAt: legacy.created_at || new Date().toISOString(),
   };
 }
@@ -99,67 +101,85 @@ function calculateEngagementScore(post: CleanedXPost): number {
   return totalEngagements;
 }
 
-function identifyPotentialLead(user: UserProfile, posts: CleanedXPost[]): boolean {
+function identifyPotentialLead(
+  user: UserProfile,
+  posts: CleanedXPost[]
+): boolean {
   // Criteria for identifying potential leads
   const hasSubstantialFollowers = user.followersCount > 1000;
   const isVerified = user.isVerified;
   const hasValidDescription = user.description.length > 10;
   const hasWebsite = !!user.url;
-  const businessTermMatches = user.description.toLowerCase().match(/(ceo|founder|director|vp|head of|manager|lead|business|company)/g);
-  const hasBusinessTerms = businessTermMatches !== null && businessTermMatches.length > 0;
-  
-  return (hasSubstantialFollowers || isVerified) && 
-         hasValidDescription && 
-         (hasWebsite || hasBusinessTerms);
+  const businessTermMatches = user.description
+    .toLowerCase()
+    .match(/(ceo|founder|director|vp|head of|manager|lead|business|company)/g);
+  const hasBusinessTerms =
+    businessTermMatches !== null && businessTermMatches.length > 0;
+
+  return (
+    (hasSubstantialFollowers || isVerified) &&
+    hasValidDescription &&
+    (hasWebsite || hasBusinessTerms)
+  );
 }
 
-function generateLeadApproachSuggestion(user: UserProfile, posts: CleanedXPost[]): string {
-  const recentInterests = posts
-    .map(post => post.content.toLowerCase())
-    .join(' ')
-    .match(/(ai|machine learning|data|cloud|security|automation|digital transformation|innovation)/g) || [];
+function generateLeadApproachSuggestion(
+  user: UserProfile,
+  posts: CleanedXPost[]
+): string {
+  const recentInterests =
+    posts
+      .map((post) => post.content.toLowerCase())
+      .join(" ")
+      .match(
+        /(ai|machine learning|data|cloud|security|automation|digital transformation|innovation)/g
+      ) || [];
 
   const uniqueInterests = [...new Set(recentInterests)];
-  
-  if (uniqueInterests.length === 0) return 'General technology and innovation approach recommended';
-  
-  return `Approach focusing on their interest in ${uniqueInterests.join(', ')}. Consider highlighting our solutions in these areas.`;
+
+  if (uniqueInterests.length === 0)
+    return "General technology and innovation approach recommended";
+
+  return `Approach focusing on their interest in ${uniqueInterests.join(", ")}. Consider highlighting our solutions in these areas.`;
 }
 
 // Function to clean raw X data
 export async function cleanXData(rawData: any): Promise<CleanedData> {
   try {
-    const entries = rawData.data?.list?.tweets_timeline?.timeline?.instructions?.[0]?.entries || [];
+    const entries =
+      rawData.data?.list?.tweets_timeline?.timeline?.instructions?.[0]
+        ?.entries || [];
     const hashtagCounts: Record<string, number> = {};
     const mentionedUserCounts: Record<string, number> = {};
     const languageCounts: Record<string, number> = {};
-    
+
     const cleanedPosts = entries
       .filter((entry: any) => {
         const tweet = entry?.content?.itemContent?.tweet_results?.result;
-        return tweet && entry.content.entryType !== 'TimelineTimelineModule';
+        return tweet && entry.content.entryType !== "TimelineTimelineModule";
       })
       .map((entry: any) => {
         const tweet = entry.content.itemContent.tweet_results.result;
         const legacy = tweet.legacy;
         const user = tweet.core.user_results.result;
         const entities = legacy.entities;
-        
+
         // Count hashtags
         (entities.hashtags || []).forEach((tag: any) => {
           hashtagCounts[tag.text] = (hashtagCounts[tag.text] || 0) + 1;
         });
-        
+
         // Count mentioned users
         (entities.user_mentions || []).forEach((mention: any) => {
-          mentionedUserCounts[mention.screen_name] = (mentionedUserCounts[mention.screen_name] || 0) + 1;
+          mentionedUserCounts[mention.screen_name] =
+            (mentionedUserCounts[mention.screen_name] || 0) + 1;
         });
-        
+
         // Count languages
         languageCounts[legacy.lang] = (languageCounts[legacy.lang] || 0) + 1;
-        
+
         const cleanedPost: CleanedXPost = {
-          content: legacy.full_text || '',
+          content: legacy.full_text || "",
           owner: extractUserProfile(user),
           publishDate: legacy.created_at || new Date().toISOString(),
           metrics: {
@@ -170,19 +190,24 @@ export async function cleanXData(rawData: any): Promise<CleanedData> {
             views: tweet.views?.count,
           },
           urls: extractUrls(entities),
-          mentionedUsers: (entities.user_mentions || []).map((u: any) => u.screen_name),
+          mentionedUsers: (entities.user_mentions || []).map(
+            (u: any) => u.screen_name
+          ),
           hashtags: (entities.hashtags || []).map((h: any) => h.text),
           isReply: !!legacy.in_reply_to_status_id_str,
           isRetweet: !!legacy.retweeted_status_result,
-          language: legacy.lang || 'unknown',
+          language: legacy.lang || "unknown",
         };
-        
+
         return cleanedPost;
       })
       .filter((post: CleanedXPost) => post.content.length > 0);
 
     // Calculate total engagement
-    const totalEngagement = cleanedPosts.reduce((sum: number, post: CleanedXPost) => sum + calculateEngagementScore(post), 0);
+    const totalEngagement = cleanedPosts.reduce(
+      (sum: number, post: CleanedXPost) => sum + calculateEngagementScore(post),
+      0
+    );
     const avgEngagement = totalEngagement / cleanedPosts.length;
 
     return {
@@ -203,23 +228,34 @@ export async function cleanXData(rawData: any): Promise<CleanedData> {
       },
     };
   } catch (error) {
-    console.error('[X-Data-Processor] Error cleaning data:', error);
+    console.error("[X-Data-Processor] Error cleaning data:", error);
     throw error;
   }
 }
 
-export async function generateNewsletter(data: CleanedData): Promise<NewsletterContent> {
+export async function generateNewsletter(
+  data: CleanedData
+): Promise<NewsletterContent> {
   const potentialLeads = data.posts
-    .map(post => post.owner)
-    .filter((user, index, self) => 
-      index === self.findIndex(u => u.screenName === user.screenName) && // Deduplicate
-      identifyPotentialLead(user, data.posts.filter(p => p.owner.screenName === user.screenName))
+    .map((post) => post.owner)
+    .filter(
+      (user, index, self) =>
+        index === self.findIndex((u) => u.screenName === user.screenName) && // Deduplicate
+        identifyPotentialLead(
+          user,
+          data.posts.filter((p) => p.owner.screenName === user.screenName)
+        )
     )
-    .map(user => {
-      const userPosts = data.posts.filter(p => p.owner.screenName === user.screenName);
+    .map((user) => {
+      const userPosts = data.posts.filter(
+        (p) => p.owner.screenName === user.screenName
+      );
       return {
         user,
-        relevanceScore: userPosts.reduce((score, post) => score + calculateEngagementScore(post), 0),
+        relevanceScore: userPosts.reduce(
+          (score, post) => score + calculateEngagementScore(post),
+          0
+        ),
         recentActivity: userPosts.slice(0, 3),
         suggestedApproach: generateLeadApproachSuggestion(user, userPosts),
       };
@@ -231,7 +267,9 @@ export async function generateNewsletter(data: CleanedData): Promise<NewsletterC
   const keyTopics = data.analytics.topHashtags
     .map(({ tag, count }) => ({
       topic: tag,
-      posts: data.posts.filter(post => post.hashtags.includes(tag)).slice(0, 3),
+      posts: data.posts
+        .filter((post) => post.hashtags.includes(tag))
+        .slice(0, 3),
       relevance: count,
     }))
     .slice(0, 5);
@@ -243,22 +281,23 @@ export async function generateNewsletter(data: CleanedData): Promise<NewsletterC
     trends: data.analytics.topHashtags.map(({ tag, count }) => ({
       trend: tag,
       frequency: count,
-      examples: data.posts.filter(post => post.hashtags.includes(tag)).slice(0, 2),
+      examples: data.posts
+        .filter((post) => post.hashtags.includes(tag))
+        .slice(0, 2),
     })),
   };
 }
 
 // Function to save cleaned data
-export async function saveCleanedData(data: CleanedData, outputPath: string): Promise<void> {
+export async function saveCleanedData(
+  data: CleanedData,
+  outputPath: string
+): Promise<void> {
   try {
-    await fs.writeFile(
-      outputPath,
-      JSON.stringify(data, null, 2),
-      'utf-8'
-    );
+    await fs.writeFile(outputPath, JSON.stringify(data, null, 2), "utf-8");
     console.log(`[X-Data-Processor] Cleaned data saved to ${outputPath}`);
   } catch (error) {
-    console.error('[X-Data-Processor] Error saving cleaned data:', error);
+    console.error("[X-Data-Processor] Error saving cleaned data:", error);
     throw error;
   }
 }
@@ -266,10 +305,10 @@ export async function saveCleanedData(data: CleanedData, outputPath: string): Pr
 // Function to read cleaned data
 export async function readCleanedData(filePath: string): Promise<CleanedData> {
   try {
-    const data = await fs.readFile(filePath, 'utf-8');
+    const data = await fs.readFile(filePath, "utf-8");
     return JSON.parse(data) as CleanedData;
   } catch (error) {
-    console.error('[X-Data-Processor] Error reading cleaned data:', error);
+    console.error("[X-Data-Processor] Error reading cleaned data:", error);
     throw error;
   }
-} 
+}

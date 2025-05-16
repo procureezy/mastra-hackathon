@@ -6,3 +6,4 @@ dist
 .env
 *.db
 *.db-*
+pnpm-lock.yaml
