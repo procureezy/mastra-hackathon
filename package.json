@@ -18,7 +18,9 @@
     "@mastra/core": "^0.9.4-alpha.3",
     "@mastra/libsql": "^0.0.4-alpha.3",
     "@mastra/memory": "^0.3.4-alpha.3",
+    "@notionhq/client": "^3.0.1",
     "dotenv": "^16.5.0",
+    "playwright": "^1.52.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

@@ -1,5 +1,6 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
+import { xScraperTool } from './x-tools';
 
 interface GeocodingResponse {
   results: {
@@ -20,6 +21,7 @@ interface WeatherResponse {
   };
 }
 
+export { xScraperTool };
 export const weatherTool = createTool({
   id: 'get-weather',
   description: 'Get current weather for a location',

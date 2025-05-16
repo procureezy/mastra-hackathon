@@ -33,3 +33,5 @@ export const weatherAgent = new Agent({
     },
   }),
 });
+
+export { xSummarizerAgent } from './x-summarizer';
