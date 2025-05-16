@@ -3,11 +3,15 @@ import { z } from "zod";
 import { chromium, Browser, Page, BrowserContext } from "playwright";
 import fs from "fs/promises";
 import path from "path";
+import dotenv from "dotenv";
 import {
   cleanXData,
   saveCleanedData,
   CleanedData,
 } from "../utils/x-data-processor";
+
+// Load environment variables
+dotenv.config();
 
 // Types
 type ToolResponse = {
@@ -20,9 +24,9 @@ type ToolResponse = {
 // Configuration
 const CONFIG = {
   auth: {
-    email: "ahmaddraw6@gmail.com",
-    username: "shiinoo854283",
-    password: "A66h2002",
+    email: process.env.X_EMAIL!,
+    username: process.env.X_USERNAME!,
+    password: process.env.X_PASSWORD!,
   },
   browser: {
     viewport: { width: 1280, height: 720 },
