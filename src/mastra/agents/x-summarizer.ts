@@ -62,95 +62,41 @@ export const xSummarizerAgent = new Agent({
     }
 
     Your primary function is to:
-    1. Extract list ID from user input or use default
-    2. Use xScraperTool with the correct list ID to fetch data
-    3. Create a concise summary of the content
-    4. Identify key themes, trending topics, and important discussions
-    5. Present the information in a structured JSON format
-
-    You MUST return your analysis as a valid JSON object with the following structure:
-
-    {
-      "metadata": {
-        "listUrl": string,
-        "listId": string,
-        "totalPosts": number,
-        "timeRange": {
-          "start": string (ISO date),
-          "end": string (ISO date)
-        },
-        "uniqueContributors": number,
-        "processedAt": string (ISO date)
-      },
-      "keyThemes": [
-        {
-          "name": string,
-          "description": string,
-          "postCount": number,
-          "notablePosts": [
-            {
-              "content": string,
-              "author": string,
-              "publishDate": string,
-              "engagement": {
-                "likes": number,
-                "retweets": number
-              }
-            }
-          ]
-        }
-      ],
-      "trendingTopics": [
-        {
-          "topic": string,
-          "frequency": number,
-          "context": string,
-          "relatedPosts": [
-            {
-              "content": string,
-              "author": string
-            }
-          ]
-        }
-      ],
-      "highlights": [
-        {
-          "content": string,
-          "author": string,
-          "publishDate": string,
-          "significance": string,
-          "engagement": {
-            "likes": number,
-            "retweets": number
-          }
-        }
-      ],
-      "engagementAnalysis": {
-        "topContributors": [
-          {
-            "username": string,
-            "postCount": number,
-            "totalEngagement": number
-          }
-        ],
-        "peakActivity": {
-          "timeframe": string,
-          "postCount": number
-        },
-        "overallEngagementRate": number
-      }
-    }
+    1. Extract the list ID from user input. If no input is provided, use the default list ID.
+    2. Use the xScraperTool with the determined list ID to fetch data.
+    3. Once you receive the cleaned data (which has a 'posts' array as described above), take this 'posts' array.
+    4. For each post object in the 'posts' array, add a new field called 'authorProfileUrl'. The value of this field should be a string constructed by prefixing the post's 'owner.screenName' with 'https://x.com/'. For example, if owner.screenName is 'xyz', authorProfileUrl will be 'https://x.com/xyz'.
+    5. Return the first 30 posts from this modified 'posts' array (i.e., posts now including the 'authorProfileUrl' field).
+       - If the 'posts' array contains 30 or more posts, return only the first 30.
+       - If the 'posts' array contains fewer than 30 posts, return all posts in the array.
+    6. Your response MUST be a valid JSON array containing these modified post objects directly.
+       For example, if cleanedData.posts is an array of post objects, your output should be:
+       [
+         {
+           "content": "...",
+           "owner": { "screenName": "user1", /* other owner fields */ },
+           "publishDate": "...",
+           // ... other original post fields from CleanedXPost
+           "authorProfileUrl": "https://x.com/user1"
+         },
+         {
+           "content": "...",
+           "owner": { "screenName": "user2", /* other owner fields */ },
+           "publishDate": "...",
+           // ... other original post fields from CleanedXPost
+           "authorProfileUrl": "https://x.com/user2"
+         },
+         // ... up to 30 post objects
+       ]
+       Each post object in the array should retain all its original fields from the 'cleanedData.posts' array you received, with the addition of the new 'authorProfileUrl' field.
 
     Important:
-    - ALWAYS use the list ID from user input when provided
-    - Extract list ID from URLs in this format: https://x.com/i/lists/[LIST_ID]
-    - Only use the default list ID (${DEFAULT_LIST_ID}) if no input is provided
-    - Ensure all dates are in ISO format
-    - Include only the most relevant posts for each section
-    - Calculate engagement metrics accurately
-    - Maintain data privacy by only using publicly available information
-    - Your response MUST be a valid JSON object that can be parsed
-    - Do not include any explanatory text outside the JSON structure
+    - ALWAYS use the list ID from user input when provided.
+    - Extract list ID from URLs in the format: https://x.com/i/lists/[LIST_ID].
+    - Only use the default list ID (${DEFAULT_LIST_ID}) if no input is explicitly given by the user.
+    - Your response MUST be a valid JSON array that can be parsed.
+    - Do not include any explanatory text, comments, or any other content outside of the main JSON array structure.
+    - Ensure you directly return the array of post objects, each including the added 'authorProfileUrl' field, not an object containing this array.
   `,
   model: modelAWSClaudeSonnet35,
   tools: { xScraperTool },
